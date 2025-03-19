@@ -1,0 +1,102 @@
+[
+  {
+    "id": 1,
+    "dni": "76212908",
+    "first_name": "Luis",
+    "last_name": "Gonzales",
+    "email": "luis.gonzales@example.com",
+    "salary": 2200.00,
+    "position_id": 1,
+    "state": "A"
+  },
+  {
+    "id": 2,
+    "dni": "87456321",
+    "first_name": "María",
+    "last_name": "Fernández",
+    "email": "maria.fernandez@example.com",
+    "state": "I",
+    "position_id": 2,
+    "salary": 2000.00
+  },
+  {
+    "id": 3,
+    "dni": "65983247",
+    "first_name": "Carlos",
+    "last_name": "Rodríguez",
+    "email": "carlos.rodriguez@example.com",
+    "state": "A",
+    "position_id": 1,
+    "salary": 2000.00
+  },
+  {
+    "id": 4,
+    "dni": "74569832",
+    "first_name": "Ana",
+    "last_name": "Martínez",
+    "email": "ana.martinez@example.com",
+    "state": "A",
+    "position_id": 3,
+    "salary": 2000.00
+  },
+  {
+    "id": 5,
+    "dni": "82315679",
+    "first_name": "Jorge",
+    "last_name": "Pérez",
+    "email": "jorge.perez@example.com",
+    "state": "I",
+    "position_id": 4,
+    "salary": 2000.00
+  },
+  {
+    "id": 6,
+    "dni": "95175346",
+    "first_name": "Sofía",
+    "last_name": "López",
+    "email": "sofia.lopez@example.com",
+    "state": "A",
+    "position_id": 5,
+    "salary": 2000.00
+  },
+  {
+    "id": 7,
+    "dni": "32165498",
+    "first_name": "Pedro",
+    "last_name": "García",
+    "email": "pedro.garcia@example.com",
+    "state": "I",
+    "position_id": 1,
+    "salary": 2000.00
+  },
+  {
+    "id": 8,
+    "dni": "78456932",
+    "first_name": "Lucía",
+    "last_name": "Ramírez",
+    "email": "lucia.ramirez@example.com",
+    "state": "A",
+    "position_id": 2,
+    "salary": 2000.00
+  },
+  {
+    "id": 9,
+    "dni": "87412569",
+    "first_name": "Fernando",
+    "last_name": "Torres",
+    "email": "fernando.torres@example.com",
+    "state": "A",
+    "position_id": 7,
+    "salary": 2000.00
+  },
+  {
+    "id": 10,
+    "dni": "65478932",
+    "first_name": "Gabriela",
+    "last_name": "Mendoza",
+    "email": "gabriela.mendoza@example.com",
+    "state": "I",
+    "position_id": 8,
+    "salary": 2000.00
+  }
+]

@@ -1,0 +1,13 @@
+[
+    { "value": 1, "label": "Desarrollador Full Stack" },
+    { "value": 2, "label": "Analista de Datos" },
+    { "value": 3, "label": "Especialista en Ciberseguridad" },
+    { "value": 4, "label": "Encargado de Recursos Humanos" },
+    { "value": 5, "label": "Diseñador UX/UI" },
+    { "value": 6, "label": "Especialista en Marketing Digital" },
+    { "value": 7, "label": "Gerente de Proyectos" },
+    { "value": 8, "label": "Administrador de Sistemas" },
+    { "value": 9, "label": "Arquitecto de Software" },
+    { "value": 10, "label": "Especialista en Inteligencia de Negocios" }
+  ]
+  
