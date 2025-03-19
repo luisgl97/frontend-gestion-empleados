@@ -1,4 +1,4 @@
-import { Empleado } from "@/interface/Empleado";
+
 import { api } from "./configApi";
 import axios from "axios";
 
@@ -52,9 +52,15 @@ export const empleadosBuscar = async (dataPOST: {input: string; status:string}) 
   }
 };
 
-export const empleadosCrear = async (dataPOST: Empleado) => {
+export const empleadosCrear = async (formData: FormData) => {
+
+  console.log(formData)
   try {
-    const res = await api.post("api/employees", dataPOST);
+    const res = await api.post("api/employees", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',  
+      }
+    });
 
     return {
       status: "ok",
@@ -126,10 +132,14 @@ export const empleadosEliminar = async (id: string) => {
   }
 };
 
-export const empleadosEditar = async (id: string, dataPUT: Empleado) => {
+export const empleadosEditar = async (id: string, formData: FormData) => {
   try {
 
-    const res = await api.put(`api/employees/${id}`, dataPUT);
+    const res = await api.put(`api/employees/${id}`, formData,  {
+      headers: {
+        'Content-Type': 'multipart/form-data',  
+      }
+    });
    
     return {
       status: "ok",
@@ -150,6 +160,31 @@ export const empleadosEditar = async (id: string, dataPUT: Empleado) => {
       status: "error",
       empleado: null,
       message: "Error al editar empleado",
+    };
+  }
+};
+
+export const empleadosEliminarDocumento = async (id: string) => {
+  try {
+
+    const res = await api.delete(`api/employee-documents/${id}`);
+   
+    return {
+      status: "ok",
+      message: res.data.message,
+    };
+  } catch (error) {
+    
+    if (axios.isAxiosError(error)) {
+      return {
+        status: "error",
+        message: "Error en la respuesta del servidor",
+      };
+    }
+
+    return {
+      status: "error",
+      message: "Error al eliminar documento del empleado",
     };
   }
 };

@@ -31,7 +31,11 @@ import { Empleado } from "@/interface/Empleado";
 import { SimplePDFViewer } from "@/components/Pdf_view/SimplePDFViewer ";
 
 import pdfsEmpleado from "./data/pdfs_empleado.json";
-import { empleadosCrear, empleadosEditar } from "@/api/empleadosApi";
+import {
+  empleadosCrear,
+  empleadosEditar,
+  empleadosEliminarDocumento,
+} from "@/api/empleadosApi";
 import { tipoDocumentosListar } from "@/api/tipoDocumentosApi";
 import { puestosListar } from "@/api/puestosApi";
 
@@ -81,6 +85,8 @@ export const EmpleadoFormPage = () => {
 
   const empleadoDefault = location?.state || {};
 
+  console.log(empleadoDefault);
+
   const navigate = useNavigate();
 
   const [mostrarPdf, setMostrarPdf] = useState(false);
@@ -120,28 +126,30 @@ export const EmpleadoFormPage = () => {
       ...archivos
     } = data;
 
-    const archivosTransformados = Object.entries(archivos).map(
-      ([key, value]) => ({
-        id: Number(key.split("_")[1]), // tipo de documento guardado en la bd
-        value,
-      })
-    );
+    // Crear una instancia de FormData
+    const formData = new FormData();
 
-    const dataPOST: Empleado = {
-      dni: dni,
-      first_name: nombres,
-      last_name: apellidos,
-      email: email,
-      password: password,
-      status: estado ? "A" : "I",
-      position_id: Number(puesto),
-      salary: Number(salario),
-      documentos: archivosTransformados,
-    };
+    // Añadir los datos simples
+    formData.append("dni", dni);
+    formData.append("first_name", nombres);
+    formData.append("last_name", apellidos);
+    formData.append("email", email);
+    formData.append("password", String(password));
+    formData.append("status", estado ? "A" : "I");
+    formData.append("position_id", String(puesto));
+    formData.append("salary", String(salario));
 
-    console.log("dataPOST", dataPOST);
+    // Añadir los archivos
+    Object.keys(archivos).forEach((key) => {
+      const file = archivos[key];
+      if (file instanceof File) {
+        // Si el valor es un archivo, lo añadimos
+        console.log({ key, file });
+        formData.append(key, file);
+      }
+    });
 
-    const { status, message } = await empleadosCrear(dataPOST);
+    const { status, message } = await empleadosCrear(formData);
 
     if (status == "ok") {
       toast.success("Empleado agregado correctamente");
@@ -164,30 +172,32 @@ export const EmpleadoFormPage = () => {
       ...archivos
     } = data;
 
-    const archivosTransformados = Object.entries(archivos).map(
-      ([key, value]) => ({
-        id: Number(key.split("_")[1]), // tipo de documento guardado en la bd
-        value,
-      })
-    );
+    // Crear una instancia de FormData
+    const formData = new FormData();
 
-    const dataPUT: Empleado = {
-      dni: dni,
-      first_name: nombres,
-      last_name: apellidos,
-      email: email,
-      password: password,
-      status: estado ? "A" : "I",
-      position_id: Number(puesto),
-      salary: Number(salario),
-      documentos: archivosTransformados,
-    };
+    // Añadir los datos simples
+    formData.append("dni", dni);
+    formData.append("first_name", nombres);
+    formData.append("last_name", apellidos);
+    formData.append("email", email);
+    formData.append("password", String(password));
+    formData.append("status", estado ? "A" : "I");
+    formData.append("position_id", String(puesto));
+    formData.append("salary", String(salario));
 
-    console.log("dataPUT", dataPUT);
+    // Añadir los archivos
+    Object.keys(archivos).forEach((key) => {
+      const file = archivos[key];
+      if (file instanceof File) {
+        // Si el valor es un archivo, lo añadimos
+        console.log({ key, file });
+        formData.append(key, file);
+      }
+    });
 
     const { status, message } = await empleadosEditar(
       empleadoDefault.id,
-      dataPUT
+      formData
     );
 
     if (status == "ok") {
@@ -197,21 +207,30 @@ export const EmpleadoFormPage = () => {
     }
   };
 
-  const obtenerPdf = ({
-    document_type_id,
-    employee_id,
-  }: {
-    document_type_id: string;
-    employee_id: string;
-  }) => {
+  const obtenerPdf = ({ document_type_id }: { document_type_id: string }) => {
+    console.log(empleadoDefault.documents);
     const pathPdf =
-      pdfsEmpleado.find(
-        (e) =>
-          String(e.document_type_id) === document_type_id &&
-          String(e.employee_id) === employee_id
+      empleadoDefault.documents.find(
+        (e: any) => String(e.typeDocument.id) === document_type_id
       )?.file_path || "";
 
     setRutaPdf(pathPdf);
+  };
+
+  const eliminarDocumento = async (document_type_id: string) => {
+
+    const idDocumento =
+      empleadoDefault.documents.find(
+        (e: any) => String(e.typeDocument.id) === document_type_id
+      )?.id || "";
+
+    const {status} = await empleadosEliminarDocumento(idDocumento);
+
+    if(status=="ok"){
+      toast.success("Se elimino el documento correctamente")
+    }else{
+      toast.warning("Hubo un error al eliminar documento")
+    }
   };
 
   useEffect(() => {
@@ -457,14 +476,14 @@ export const EmpleadoFormPage = () => {
                   >
                     <div className="col-span-full md:col-span-2 grid grid-cols-4 items-center gap-4">
                       <Label
-                        htmlFor={"pdf_" + documento.value}
+                        htmlFor={"document_" + documento.value}
                         className="text-start leading-5"
                       >
                         Adjuntar {documento.label} (pdf)
                       </Label>
                       <FormField
                         control={form.control}
-                        name={"pdf_" + documento.value}
+                        name={"document_" + documento.value}
                         render={({
                           field: { onChange, value, ...fieldProps },
                         }) => (
@@ -495,7 +514,6 @@ export const EmpleadoFormPage = () => {
                             onClick={() => {
                               obtenerPdf({
                                 document_type_id: documento.value + "",
-                                employee_id: empleadoDefault?.id + "",
                               });
                               setMostrarPdf(true);
                             }}
@@ -507,7 +525,7 @@ export const EmpleadoFormPage = () => {
 
                           <Button
                             onClick={() => {
-                              toast.success("Documento eliminado");
+                              eliminarDocumento(documento.value);
                             }}
                             type="button"
                             className="bg-secondary hover:bg-secondary/80"

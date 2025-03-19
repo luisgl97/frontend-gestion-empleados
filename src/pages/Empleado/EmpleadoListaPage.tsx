@@ -45,6 +45,8 @@ export const EmpleadoListaPage = () => {
 
     const { empleados } = await empleadosBuscar(dataPOST);
 
+    console.log({empleados})
+
     setLoading(false);
     setDataFiltrada(empleados);
   };
@@ -82,7 +84,7 @@ export const EmpleadoListaPage = () => {
           <Input
             id="buscador"
             className="w-full md:w-[500px]"
-            placeholder="Ingrese dni / nombres / apellidos"
+            placeholder="Ingrese DNI / nombres / apellidos"
             onChange={(e) => setInput(e.target.value)}
           />
           <Select
