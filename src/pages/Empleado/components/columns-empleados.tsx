@@ -17,7 +17,7 @@ import { lista_estados } from "@/constants/lista_estados";
 export const getColumns = (
   setDialogoAdvertenciaEliminar: (value: boolean) => void,
   setSeleccionado: React.Dispatch<React.SetStateAction<Empleado | null>>
-): ColumnDef<Empleado>[] => [
+): ColumnDef<any>[] => [
 
   {
     accessorKey: "dni",
@@ -72,7 +72,20 @@ export const getColumns = (
     ),
   },
   {
-    accessorKey: "state",
+    accessorKey: "position",
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title="Puesto"
+        className="justify-center"
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="text-center">{row.original?.position?.name}</div>
+    ),
+  },
+  {
+    accessorKey: "status",
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
@@ -82,7 +95,7 @@ export const getColumns = (
     ),
     cell: ({ row }) => (
       <div className="text-center">
-        {obtenerLabel(lista_estados, row.getValue("state"))}
+        {obtenerLabel(lista_estados, row.getValue("status"))}
       </div>
     ),
   },

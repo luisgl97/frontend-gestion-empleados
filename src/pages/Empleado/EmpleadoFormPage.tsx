@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useForm } from "react-hook-form";
@@ -30,9 +30,10 @@ import { Empleado } from "@/interface/Empleado";
 
 import { SimplePDFViewer } from "@/components/Pdf_view/SimplePDFViewer ";
 
-import listaPuestos from "./data/puestos.json";
-import listaDocumentos from "./data/tipos_documentos.json";
 import pdfsEmpleado from "./data/pdfs_empleado.json";
+import { empleadosCrear, empleadosEditar } from "@/api/empleadosApi";
+import { tipoDocumentosListar } from "@/api/tipoDocumentosApi";
+import { puestosListar } from "@/api/puestosApi";
 
 const formSchema = (accion: string) =>
   z
@@ -75,9 +76,10 @@ export const EmpleadoFormPage = () => {
   const location = useLocation();
   const accion = location.pathname.split("/").pop() || "";
 
-  const empleadoDefault: Empleado = location?.state || {};
+  const [listaTipoDocumentos, setListaTipoDocumentos] = useState([]);
+  const [listaPuestos, setListaPuestos] = useState([]);
 
-  console.log(empleadoDefault);
+  const empleadoDefault = location?.state || {};
 
   const navigate = useNavigate();
 
@@ -92,14 +94,14 @@ export const EmpleadoFormPage = () => {
       apellidos: empleadoDefault?.last_name || "",
       email: empleadoDefault?.email || "",
       password: "",
-      puesto: empleadoDefault?.position_id
-        ? empleadoDefault?.position_id + ""
+      puesto: empleadoDefault?.position?.id
+        ? empleadoDefault?.position?.id + ""
         : "",
       salario: (empleadoDefault?.salary || "") + "",
       estado:
         accion == "agregar"
           ? true
-          : empleadoDefault?.state == "A"
+          : empleadoDefault?.status == "A"
           ? true
           : false,
     },
@@ -120,26 +122,33 @@ export const EmpleadoFormPage = () => {
 
     const archivosTransformados = Object.entries(archivos).map(
       ([key, value]) => ({
-        id: key.split("_")[1], // tipo de documento guardado en la bd
+        id: Number(key.split("_")[1]), // tipo de documento guardado en la bd
         value,
       })
     );
 
-    const dataPOST = {
+    const dataPOST: Empleado = {
       dni: dni,
       first_name: nombres,
       last_name: apellidos,
       email: email,
       password: password,
       status: estado ? "A" : "I",
-      archivos: archivosTransformados,
+      position_id: Number(puesto),
+      salary: Number(salario),
+      documentos: archivosTransformados,
     };
 
     console.log("dataPOST", dataPOST);
 
-    /*  const { status, user, message } = await usuariosCrear(dataPOST); */
+    const { status, message } = await empleadosCrear(dataPOST);
 
-    toast.success("Empleado agregado correctamente");
+    if (status == "ok") {
+      toast.success("Empleado agregado correctamente");
+      navigate("/");
+    } else {
+      toast.info(message);
+    }
   };
 
   const onSubmitEditar = async (data: FormSchemaType) => {
@@ -157,29 +166,35 @@ export const EmpleadoFormPage = () => {
 
     const archivosTransformados = Object.entries(archivos).map(
       ([key, value]) => ({
-        id: key.split("_")[1], // tipo de documento guardado en la bd
+        id: Number(key.split("_")[1]), // tipo de documento guardado en la bd
         value,
       })
     );
 
-    const dataPUT = {
+    const dataPUT: Empleado = {
       dni: dni,
       first_name: nombres,
       last_name: apellidos,
       email: email,
       password: password,
       status: estado ? "A" : "I",
-      archivos: archivosTransformados,
+      position_id: Number(puesto),
+      salary: Number(salario),
+      documentos: archivosTransformados,
     };
 
     console.log("dataPUT", dataPUT);
 
-    /*  const { status, user, message } = await usuariosEditar(
+    const { status, message } = await empleadosEditar(
       empleadoDefault.id,
       dataPUT
-    ); */
+    );
 
-    toast.success("Empleado editado correctamente");
+    if (status == "ok") {
+      toast.success("Empleado editado correctamente");
+    } else {
+      toast.info(message);
+    }
   };
 
   const obtenerPdf = ({
@@ -198,6 +213,37 @@ export const EmpleadoFormPage = () => {
 
     setRutaPdf(pathPdf);
   };
+
+  useEffect(() => {
+    const selectores = async () => {
+      //Ejecutar en paralelo dos funciones asincronas
+      const [tipoDocumentos, puestos] = await Promise.all([
+        tipoDocumentosListar(),
+        puestosListar(),
+      ]);
+
+      const transformarTipoDocumentos = tipoDocumentos.tipo_documentos.map(
+        (item: { id: string; name: string }) => ({
+          value: item.id + "",
+          label: item.name,
+        })
+      );
+
+      const transformarPuestos = puestos.puestos.map(
+        (item: { id: string; name: string }) => ({
+          value: item.id + "",
+          label: item.name,
+        })
+      );
+
+      console.log({ transformarTipoDocumentos, transformarPuestos });
+
+      setListaTipoDocumentos(transformarTipoDocumentos);
+      setListaPuestos(transformarPuestos);
+    };
+
+    selectores();
+  }, []);
 
   return (
     <div className="container mx-auto my-5 sm:my-20 px-4 sm:px-0">
@@ -340,14 +386,16 @@ export const EmpleadoFormPage = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {listaPuestos?.map((item) => (
-                            <SelectItem
-                              key={item.value}
-                              value={item.value + ""}
-                            >
-                              {item.label}
-                            </SelectItem>
-                          ))}
+                          {listaPuestos?.map(
+                            (item: { value: string; label: string }) => (
+                              <SelectItem
+                                key={item.value}
+                                value={item.value + ""}
+                              >
+                                {item.label}
+                              </SelectItem>
+                            )
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage className="col-start-2 col-span-full" />
@@ -400,72 +448,80 @@ export const EmpleadoFormPage = () => {
               </div>
             </div>
 
-            {listaDocumentos?.map((documento) => (
-              <div
-                className="grid grid-cols-2 gap-6 py-4 px-0 md:px-4"
-                key={documento.id}
-              >
-                <div className="col-span-full md:col-span-2 grid grid-cols-4 items-center gap-4">
-                  <Label
-                    htmlFor={"pdf_" + documento.id}
-                    className="text-start leading-5"
+            <div className="min-h-[204px]">
+              {listaTipoDocumentos?.map(
+                (documento: { value: string; label: string }) => (
+                  <div
+                    className="grid grid-cols-2 gap-6 py-4 px-0 md:px-4"
+                    key={documento.value}
                   >
-                    Adjuntar {documento.name} (pdf)
-                  </Label>
-                  <FormField
-                    control={form.control}
-                    name={"pdf_" + documento.id}
-                    render={({ field: { onChange, value, ...fieldProps } }) => (
-                      <>
-                        <FormControl>
-                          <Input
-                            {...fieldProps}
-                            className={
-                              accion == "agregar" ? "col-span-3" : "col-span-2"
-                            }
-                            placeholder="DNI pdf"
-                            type="file"
-                            accept="application/pdf"
-                            onChange={(event) => {
-                              const file = event.target.files?.[0] || null;
-                              onChange(file); // React Hook Form necesita que pasemos el archivo correctamente
+                    <div className="col-span-full md:col-span-2 grid grid-cols-4 items-center gap-4">
+                      <Label
+                        htmlFor={"pdf_" + documento.value}
+                        className="text-start leading-5"
+                      >
+                        Adjuntar {documento.label} (pdf)
+                      </Label>
+                      <FormField
+                        control={form.control}
+                        name={"pdf_" + documento.value}
+                        render={({
+                          field: { onChange, value, ...fieldProps },
+                        }) => (
+                          <>
+                            <FormControl>
+                              <Input
+                                {...fieldProps}
+                                className={
+                                  accion == "agregar"
+                                    ? "col-span-3"
+                                    : "col-span-2"
+                                }
+                                placeholder="DNI pdf"
+                                type="file"
+                                accept="application/pdf"
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0] || null;
+                                  onChange(file); // React Hook Form necesita que pasemos el archivo correctamente
+                                }}
+                              />
+                            </FormControl>
+                          </>
+                        )}
+                      />
+                      {accion == "editar" && (
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => {
+                              obtenerPdf({
+                                document_type_id: documento.value + "",
+                                employee_id: empleadoDefault?.id + "",
+                              });
+                              setMostrarPdf(true);
                             }}
-                          />
-                        </FormControl>
-                      </>
-                    )}
-                  />
-                  {accion == "editar" && (
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => {
-                          obtenerPdf({
-                            document_type_id: documento.id + "",
-                            employee_id: empleadoDefault?.id + "",
-                          });
-                          setMostrarPdf(true);
-                        }}
-                        type="button"
-                        className="bg-secondary hover:bg-secondary/80"
-                      >
-                        <Eye size={20} />
-                      </Button>
+                            type="button"
+                            className="bg-secondary hover:bg-secondary/80"
+                          >
+                            <Eye size={20} />
+                          </Button>
 
-                      <Button
-                        onClick={() => {
-                          toast.success("Documento eliminado")
-                        }}
-                        type="button"
-                        className="bg-secondary hover:bg-secondary/80"
-                        variant={"destructive"}
-                      >
-                        <Trash2 size={20} />
-                      </Button>
+                          <Button
+                            onClick={() => {
+                              toast.success("Documento eliminado");
+                            }}
+                            type="button"
+                            className="bg-secondary hover:bg-secondary/80"
+                            variant={"destructive"}
+                          >
+                            <Trash2 size={20} />
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-            ))}
+                  </div>
+                )
+              )}
+            </div>
           </div>
 
           {/* Botones */}
