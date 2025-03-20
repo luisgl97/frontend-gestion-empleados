@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
-import { ArrowLeft, Eye, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, LoaderCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -26,15 +26,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Empleado } from "@/interface/Empleado";
-
 import { SimplePDFViewer } from "@/components/Pdf_view/SimplePDFViewer ";
 
-import pdfsEmpleado from "./data/pdfs_empleado.json";
 import {
   empleadosCrear,
   empleadosEditar,
   empleadosEliminarDocumento,
+  empleadosVerPdf,
 } from "@/api/empleadosApi";
 import { tipoDocumentosListar } from "@/api/tipoDocumentosApi";
 import { puestosListar } from "@/api/puestosApi";
@@ -71,6 +69,7 @@ const formSchema = (accion: string) =>
         }),
 
       estado: z.boolean().default(true).optional(),
+
     })
     .passthrough(); // Permite otros atributos no definidos;
 
@@ -85,12 +84,11 @@ export const EmpleadoFormPage = () => {
 
   const empleadoDefault = location?.state || {};
 
-  console.log(empleadoDefault);
-
   const navigate = useNavigate();
 
   const [mostrarPdf, setMostrarPdf] = useState(false);
   const [rutaPdf, setRutaPdf] = useState("");
+  const [loading, setLoading] = useState(false)
 
   const form = useForm({
     resolver: zodResolver(formSchema(accion)),
@@ -114,6 +112,8 @@ export const EmpleadoFormPage = () => {
   });
 
   const onSubmitCrear = async (data: FormSchemaType) => {
+
+    setLoading(true)
     const {
       dni,
       nombres,
@@ -125,6 +125,7 @@ export const EmpleadoFormPage = () => {
       puesto,
       ...archivos
     } = data;
+
 
     // Crear una instancia de FormData
     const formData = new FormData();
@@ -144,12 +145,13 @@ export const EmpleadoFormPage = () => {
       const file = archivos[key];
       if (file instanceof File) {
         // Si el valor es un archivo, lo añadimos
-        console.log({ key, file });
         formData.append(key, file);
       }
     });
 
     const { status, message } = await empleadosCrear(formData);
+
+    setLoading(false)
 
     if (status == "ok") {
       toast.success("Empleado agregado correctamente");
@@ -160,6 +162,7 @@ export const EmpleadoFormPage = () => {
   };
 
   const onSubmitEditar = async (data: FormSchemaType) => {
+    setLoading(true)
     const {
       dni,
       nombres,
@@ -171,7 +174,7 @@ export const EmpleadoFormPage = () => {
       puesto,
       ...archivos
     } = data;
-
+  
     // Crear una instancia de FormData
     const formData = new FormData();
 
@@ -189,8 +192,6 @@ export const EmpleadoFormPage = () => {
     Object.keys(archivos).forEach((key) => {
       const file = archivos[key];
       if (file instanceof File) {
-        // Si el valor es un archivo, lo añadimos
-        console.log({ key, file });
         formData.append(key, file);
       }
     });
@@ -199,7 +200,7 @@ export const EmpleadoFormPage = () => {
       empleadoDefault.id,
       formData
     );
-
+    setLoading(false)
     if (status == "ok") {
       toast.success("Empleado editado correctamente");
     } else {
@@ -207,29 +208,35 @@ export const EmpleadoFormPage = () => {
     }
   };
 
-  const obtenerPdf = ({ document_type_id }: { document_type_id: string }) => {
-    console.log(empleadoDefault.documents);
-    const pathPdf =
-      empleadoDefault.documents.find(
-        (e: any) => String(e.typeDocument.id) === document_type_id
-      )?.file_path || "";
+  const obtenerPdf = async ({
+    document_type_id,
+  }: {
+    document_type_id: string;
+  }) => {
+    const dataPOST: { employee_id: number; document_type_id: number } = {
+      employee_id: empleadoDefault.id,
+      document_type_id: Number(document_type_id),
+    };
 
-    setRutaPdf(pathPdf);
+    const { url } = await empleadosVerPdf(dataPOST);
+
+    setRutaPdf(url);
   };
 
   const eliminarDocumento = async (document_type_id: string) => {
 
-    const idDocumento =
-      empleadoDefault.documents.find(
-        (e: any) => String(e.typeDocument.id) === document_type_id
-      )?.id || "";
 
-    const {status} = await empleadosEliminarDocumento(idDocumento);
+    const dataPOST: { employee_id: number; document_type_id: number } = {
+      employee_id: empleadoDefault.id,
+      document_type_id: Number(document_type_id),
+    };
 
-    if(status=="ok"){
-      toast.success("Se elimino el documento correctamente")
-    }else{
-      toast.warning("Hubo un error al eliminar documento")
+    const { status } = await empleadosEliminarDocumento(dataPOST);
+
+    if (status == "ok") {
+      toast.success("Se elimino el documento correctamente");
+    } else {
+      toast.warning("Hubo un error al eliminar documento");
     }
   };
 
@@ -254,8 +261,6 @@ export const EmpleadoFormPage = () => {
           label: item.name,
         })
       );
-
-      console.log({ transformarTipoDocumentos, transformarPuestos });
 
       setListaTipoDocumentos(transformarTipoDocumentos);
       setListaPuestos(transformarPuestos);
@@ -486,6 +491,7 @@ export const EmpleadoFormPage = () => {
                         name={"document_" + documento.value}
                         render={({
                           field: { onChange, value, ...fieldProps },
+                          fieldState,
                         }) => (
                           <>
                             <FormControl>
@@ -505,6 +511,11 @@ export const EmpleadoFormPage = () => {
                                 }}
                               />
                             </FormControl>
+                            {fieldState.error && (
+                              <p className="text-red-500 text-sm">
+                                {fieldState.error.message}
+                              </p>
+                            )}
                           </>
                         )}
                       />
@@ -545,8 +556,8 @@ export const EmpleadoFormPage = () => {
           {/* Botones */}
 
           <div className="flex gap-4 justify-center p-4">
-            <Button type="submit" className="w-1/2">
-              Guardar
+            <Button type="submit" className={`w-1/2`} disabled={loading}>
+              Guardar {loading && <LoaderCircle size={20} className="animate-spin"/>}
             </Button>
             <Link
               to="/"

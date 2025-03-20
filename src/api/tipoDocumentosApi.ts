@@ -7,7 +7,7 @@ import axios from "axios";
 export const tipoDocumentosListar = async () => {
   try {
     const res = await api.get("api/type-documents");
-    console.log('res',res)
+
     return {
       status: "ok",
       tipo_documentos: res.data.data,

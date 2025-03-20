@@ -30,7 +30,7 @@ export const empleadosListar = async () => {
 export const empleadosBuscar = async (dataPOST: {input: string; status:string}) => {
   try {
     const res = await api.post("api/employees/search", dataPOST);
-    console.log('res',res)
+   
     return {
       status: "ok",
       empleados: res.data.data,
@@ -54,7 +54,6 @@ export const empleadosBuscar = async (dataPOST: {input: string; status:string}) 
 
 export const empleadosCrear = async (formData: FormData) => {
 
-  console.log(formData)
   try {
     const res = await api.post("api/employees", formData, {
       headers: {
@@ -72,7 +71,7 @@ export const empleadosCrear = async (formData: FormData) => {
       return {
         status: "error",
         empleado: null,
-        message: "Error en la respuesta del servidor",
+        message: error.response?.data.message,
       };
     }
 
@@ -152,7 +151,7 @@ export const empleadosEditar = async (id: string, formData: FormData) => {
       return {
         status: "error",
         empleado: null,
-        message: "Error en la respuesta del servidor",
+        message: error.response?.data.message,
       };
     }
 
@@ -164,17 +163,17 @@ export const empleadosEditar = async (id: string, formData: FormData) => {
   }
 };
 
-export const empleadosEliminarDocumento = async (id: string) => {
+export const empleadosEliminarDocumento = async (dataPOST: {employee_id: number; document_type_id:number}) => {
   try {
 
-    const res = await api.delete(`api/employee-documents/${id}`);
-   
+    const res = await api.post('api/employees/delete-pdf', dataPOST);
+   console.log('res',res)
     return {
       status: "ok",
       message: res.data.message,
     };
   } catch (error) {
-    
+    console.log(error)
     if (axios.isAxiosError(error)) {
       return {
         status: "error",
@@ -185,6 +184,31 @@ export const empleadosEliminarDocumento = async (id: string) => {
     return {
       status: "error",
       message: "Error al eliminar documento del empleado",
+    };
+  }
+};
+
+export const empleadosVerPdf = async (dataPOST: {employee_id: number; document_type_id:number}) => {
+  try {
+    const res = await api.post("api/employees/view-pdf", dataPOST);
+   
+    return {
+      status: "ok",
+      url: res.data.data,
+      message: res.data.message,
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      return {
+        status: "error",
+        url: null,
+        message: "Error en la respuesta del servidor",
+      };
+    }
+    return {
+      status: "error",
+      url: null,
+      message: "Error al obtener url",
     };
   }
 };

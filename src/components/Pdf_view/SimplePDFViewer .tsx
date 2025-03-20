@@ -57,7 +57,7 @@ export const SimplePDFViewer = ({
 
       {/* Visor PDF */}
       <div className="flex-1 relative h-full">
-        {pdfFilePath != "" ? (
+        {pdfFilePath != null ? (
           <>
             <PDFSlickViewer {...{ viewerRef, usePDFSlickStore }} />
             <PDFNavigation {...{ usePDFSlickStore }} />

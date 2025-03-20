@@ -45,8 +45,6 @@ export const EmpleadoListaPage = () => {
 
     const { empleados } = await empleadosBuscar(dataPOST);
 
-    console.log({empleados})
-
     setLoading(false);
     setDataFiltrada(empleados);
   };
